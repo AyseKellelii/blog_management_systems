@@ -2,31 +2,30 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Mass assignable fields
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
+        'phone',
         'password',
+        'role',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Hidden fields for arrays
      */
     protected $hidden = [
         'password',
@@ -34,15 +33,53 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Casts
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    /**
+     * Relationships
+     */
+
+    // Kullanıcının yazdığı blog yazıları
+    public function posts(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Post::class);
+    }
+
+    // Kullanıcının yaptığı yorumlar
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    // Kullanıcının bildirimleri
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Helper functions
+     */
+
+    // Kullanıcı admin mi?
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    // Kullanıcı yazar mı?
+    public function isAuthor()
+    {
+        return $this->role === 'author';
+    }
+
+    // Kullanıcı normal kullanıcı mı?
+    public function isUser()
+    {
+        return $this->role === 'user';
     }
 }
