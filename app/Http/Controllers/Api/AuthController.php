@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
 
@@ -46,27 +47,36 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
+        $credentials = $request->validate([
             'login'    => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->login)
-            ->orWhere('phone', $request->login)
-            ->first();
+        // Email mi telefon mu?
+        $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'login' => ['Geçersiz giriş bilgileri.'],
-            ]);
+        if (!Auth::attempt([$loginField => $credentials['login'], 'password' => $credentials['password']])) {
+            return response()->json([
+                'message' => 'Bilgiler hatalı!'
+            ], 401);
         }
 
-        $token = $user->createToken('api_token')->plainTextToken;
+        $user = Auth::user();
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Rol bazlı yönlendirme
+        $redirectUrl = match ($user->role) {
+            'admin'  => '/admin',
+            'author' => '/author',
+            default  => '/dashboard',
+        };
 
         return response()->json([
-            'message' => 'Giriş başarılı',
-            'token'   => $token,
-            'user'    => $user,
+            'message'      => 'Giriş başarılı',
+            'user'         => $user,
+            'token'        => $token,
+            'redirect_url' => $redirectUrl,
         ]);
     }
 

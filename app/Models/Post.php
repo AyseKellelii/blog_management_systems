@@ -5,70 +5,43 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
-// Spatie Medialibrary
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-
-class Post extends Model implements HasMedia
+class Post extends Model
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
+    use HasFactory, SoftDeletes;
 
-    /**
-     * Mass assignable fields
-     */
     protected $fillable = [
         'user_id',
         'title',
         'slug',
         'content',
+        'cover_image', // Dosya yolu burada saklanacak
         'status',
         'published_at',
     ];
 
-    /**
-     * Relationships
-     */
+    protected $casts = [
+        'published_at' => 'datetime',
+    ];
 
-    // Post'un yazarı
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    // Post'un kategorileri (çoktan çoğa)
+    // Kategorilerle ilişki (many-to-many)
     public function categories()
     {
         return $this->belongsToMany(Category::class);
     }
 
-    // Post'un yorumları
-    public function comments()
+    // Cover image için full URL üret
+    public function getCoverImageUrlAttribute()
     {
-        return $this->hasMany(Comment::class);
+        return $this->cover_image
+            ? asset('storage/' . $this->cover_image)
+            : null;
     }
 
-    /**
-     * Spatie Medialibrary - cover image için
-     */
-    public function registerMediaCollections(): void
+    // Kullanıcı ile ilişki
+    public function user()
     {
-        $this->addMediaCollection('cover_image')->singleFile();
-    }
-
-    /**
-     * Helper fonksiyonlar
-     */
-
-    // Post yayında mı?
-    public function isPublished()
-    {
-        return $this->status === 'published';
-    }
-
-    // Post taslak mı?
-    public function isDraft()
-    {
-        return $this->status === 'draft';
+        return $this->belongsTo(User::class);
     }
 }

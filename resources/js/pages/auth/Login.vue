@@ -8,16 +8,26 @@
                 <!-- Email veya Telefon -->
                 <div>
                     <label class="block text-sm font-medium mb-1">Email veya Telefon</label>
-                    <Field name="login" v-model="login" type="text"
-                           class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"/>
+                    <Field
+                        name="login"
+                        v-model="login"
+                        type="text"
+                        autocomplete="username"
+                        class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    />
                     <ErrorMessage name="login" class="text-red-500 text-sm mt-1"/>
                 </div>
 
                 <!-- Şifre -->
                 <div>
                     <label class="block text-sm font-medium mb-1">Şifre</label>
-                    <Field name="password" v-model="password" type="password"
-                           class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"/>
+                    <Field
+                        name="password"
+                        v-model="password"
+                        type="password"
+                        autocomplete="current-password"
+                        class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    />
                     <ErrorMessage name="password" class="text-red-500 text-sm mt-1"/>
                 </div>
 
@@ -39,9 +49,9 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 import { Form, Field, ErrorMessage } from 'vee-validate';
 import * as yup from 'yup';
+import api from '../../api.js';
 
 const router = useRouter();
 const login = ref('');
@@ -55,19 +65,21 @@ const schema = yup.object({
 
 async function submitForm() {
     try {
-        const res = await axios.post('http://127.0.0.1:8000/api/login', {
+        const res = await api.post('/login', {
             login: login.value,
             password: password.value,
         });
 
-        // Token ve kullanıcıyı localStorage'da sakla
+        // Token ve kullanıcı bilgilerini sakla
         localStorage.setItem('api_token', res.data.token);
+        localStorage.setItem('current_user', JSON.stringify(res.data.user));
+
+        // Global olarak current user
         window.__CURRENT_USER__ = res.data.user;
 
-        alert('Giriş başarılı!');
+        // Redirect backend’den gelen URL ile
+        router.push(res.data.redirect_url);
 
-        // Dashboard sayfasına yönlendir
-        router.push('/dashboard');
     } catch (e) {
         alert('Giriş başarısız!');
         console.error(e.response?.data || e);

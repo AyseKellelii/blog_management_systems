@@ -10,32 +10,10 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * Mass assignable fields
-     */
-    protected $fillable = [
-        'name',
-        'slug',
-        'description',
-    ];
+    protected $fillable = ['name', 'slug'];
 
-    /**
-     * Relationships
-     */
-
-    // Kategoriye ait olan postlar (çoktan çoğa)
     public function posts()
     {
         return $this->belongsToMany(Post::class);
-    }
-
-    /**
-     * Helper fonksiyonlar
-     */
-
-    // Kategoriye ait post sayısını al
-    public function postsCount()
-    {
-        return $this->posts()->count();
     }
 }

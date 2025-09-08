@@ -1,14 +1,13 @@
-resources/js/main.js
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
-import './styles.css'; // tailwind entry (app.css)
-import { VueMaskDirective } from '@mask/vue-the-mask';
+import '../css/app.css'; // DOĞRU YOL
+import api from './api.js';
+import TheMask from 'vue-the-mask';
 
 const app = createApp(App);
 
-// global directive for mask
-app.directive('mask', VueMaskDirective);
-
+app.use(TheMask);
+app.config.globalProperties.$api = api;
 app.use(router);
 app.mount('#app');

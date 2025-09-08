@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Define your route model bindings, pattern filters, etc.
      */
+    protected $policies = [
+        \App\Models\Post::class => \App\Policies\PostPolicy::class,
+    ];
     public function boot(): void
     {
         $this->routes(function () {

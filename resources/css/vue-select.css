@@ -1,0 +1,13 @@
+/* resources/css/vue-select.css */
+.v-select {
+    display: block;
+    width: 100%;
+}
+.v-select .vs__dropdown-toggle {
+    border: 1px solid #d1d5db;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+}
+.v-select .vs__selected {
+    display: inline-block;
+}
