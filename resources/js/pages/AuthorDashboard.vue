@@ -3,9 +3,17 @@
         <!-- Navbar -->
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold">Yazar Paneli</h1>
-            <button @click="logout" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
-                Çıkış Yap
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- Bildirim Butonu -->
+                <button @click="goComments" class="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 transition">
+                    🔔 Bildirimler ({{ notifications.length }})
+                </button>
+
+                <!-- Çıkış Butonu -->
+                <button @click="logout" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                    Çıkış Yap
+                </button>
+            </div>
         </div>
 
         <!-- Actions -->
@@ -80,7 +88,7 @@
 </template>
 
 <script setup>
-import {ref} from 'vue';
+import {ref, onMounted} from 'vue';
 import {useRouter} from 'vue-router';
 import api from '../api.js';
 import PostModal from './PostModal.vue';
@@ -94,6 +102,20 @@ const per_page = 6;
 const showPostModal = ref(false);
 const editingPost = ref(false);
 const editingPostData = ref(null);
+
+const notifications = ref([]);
+
+// Bildirimleri çek
+const fetchNotifications = async () => {
+    try {
+        const res = await api.get('/author/notifications', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
+        });
+        notifications.value = res.data;
+    } catch (e) {
+        console.error('Bildirimler yüklenemedi.');
+    }
+};
 
 const fetchPosts = async (p = 1) => {
     page.value = p;
@@ -128,15 +150,13 @@ const togglePublish = async (post) => {
         const res = await api.patch(`/posts/${post.id}/toggle-status`, null, {
             headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
         });
-
-        // Post objesini güncelle
         Object.assign(post, res.data);
-
     } catch (e) {
         console.error('Yayın durumu değiştirilemedi: ', e);
         alert('Yayın durumu değiştirilemedi.');
     }
 };
+
 const softDelete = async (post) => {
     try {
         await api.delete(`/posts/${post.id}`, {
@@ -147,6 +167,10 @@ const softDelete = async (post) => {
 };
 
 const goCategoryManagement = () => router.push({name: 'category_management'});
+
+// Bildirimler butonuna tıklandığında yorumlar sayfasına git
+const goComments = () => router.push({ name: 'author.comments' });
+
 
 const handlePostSave = (newPost) => {
     if (editingPost.value) {
@@ -169,5 +193,8 @@ const logout = async () => {
     }
 };
 
-fetchPosts();
+onMounted(() => {
+    fetchPosts();
+    fetchNotifications();
+});
 </script>

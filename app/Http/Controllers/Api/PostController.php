@@ -9,6 +9,13 @@ use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
+
+    public function index()
+    {
+        // Admin tüm yazıları görebilir
+        $posts = Post::with('user')->get();
+        return response()->json($posts);
+    }
     // Yazarın kendi yazılarını getir
     public function authorPosts(Request $request)
     {
@@ -145,4 +152,31 @@ class PostController extends Controller
             return response()->json(['error' => 'Yayın durumu değiştirilemedi.'], 500);
         }
     }
+    public function adminPosts()
+    {
+        try {
+            // Tüm yazılar: yazar bilgisi ile
+            $posts = Post::with('user')
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(function ($post) {
+                    return [
+                        'id' => $post->id,
+                        'title' => $post->title,
+                        'user_first_name' => $post->user ? $post->user->first_name : 'Bilinmiyor',
+                        'user_last_name' => $post->user ? $post->user->last_name : 'Bilinmiyor',
+                        'status' => $post->status === 'published' ? 'Yayında' : 'Taslak',
+                        'published_at' => $post->published_at,
+                    ];
+                });
+
+            return response()->json($posts);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
 }

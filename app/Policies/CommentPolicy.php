@@ -10,15 +10,37 @@ class CommentPolicy
 {
     use HandlesAuthorization;
 
-    // Admin yorumları onaylayabilir
+    /**
+     * Yorum onaylama (sadece admin)
+     */
     public function approve(User $user, Comment $comment)
     {
         return $user->role === 'admin';
     }
 
-    // Admin veya yorum sahibi silebilir
+    /**
+     * Yorum güncelleme
+     * - Yorum sahibi veya admin olabilir
+     */
+    public function update(User $user, Comment $comment)
+    {
+        return $user->id === $comment->user_id || $user->role === 'admin';
+    }
+
+    /**
+     * Yorum silme
+     * - Yorum sahibi veya admin olabilir
+     */
     public function delete(User $user, Comment $comment)
     {
-        return $user->role === 'admin' || $user->id === $comment->user_id;
+        return $user->id === $comment->user_id || $user->role === 'admin';
+    }
+
+    /**
+     * Admin özel yetkiler
+     */
+    public function adminOnly(User $user)
+    {
+        return $user->role === 'admin';
     }
 }

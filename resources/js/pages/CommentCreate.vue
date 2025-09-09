@@ -70,7 +70,10 @@ const submitComment = async () => {
     try {
         await api.post(
             `/posts/${route.params.id}/comments`,
-            { icerik: icerik.value },
+            {
+                icerik: icerik.value,
+                post_id: route.params.id
+            },
             { headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` } }
         );
         icerik.value = '';

@@ -1,91 +1,124 @@
-<template>
-    <div class="p-6 min-h-screen bg-gray-100">
-        <h1 class="text-2xl font-bold mb-4">Kategori Yönetimi</h1>
-
-        <router-link to="/author" class="mb-4 inline-block text-blue-600 hover:underline">
-            Geri
-        </router-link>
-
-        <!-- Kategoriler Tablosu -->
-        <table class="min-w-full bg-white rounded shadow mb-4">
-            <thead>
-            <tr>
-                <th class="px-4 py-2">ID</th>
-                <th class="px-4 py-2">Kategori Adı</th>
-                <th class="px-4 py-2">Slug</th>
-                <th class="px-4 py-2">Oluşturma Tarihi</th>
-                <th class="px-4 py-2">İşlemler</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="cat in categories" :key="cat.id">
-                <td class="border px-4 py-2">{{ cat.id }}</td>
-                <td class="border px-4 py-2">
-                    <input v-model="cat.name" class="border p-1 rounded w-full" />
-                </td>
-                <td class="border px-4 py-2">{{ cat.slug }}</td>
-                <td class="border px-4 py-2">{{ new Date(cat.created_at).toLocaleString() }}</td>
-                <td class="border px-4 py-2 flex gap-2">
-                    <button @click="updateCategory(cat)" class="px-2 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">Güncelle</button>
-                    <button @click="deleteCategory(cat.id)" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">Sil</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-
-        <!-- Yeni Kategori Ekleme -->
-        <div class="flex gap-2">
-            <input v-model="newCategory" placeholder="Yeni kategori" class="border p-2 rounded flex-1"/>
-            <button @click="addCategory" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Ekle</button>
-        </div>
-    </div>
-</template>
-
 <script setup>
 import { ref, onMounted } from 'vue';
-import api from '../api.js';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const categories = ref([]);
-const newCategory = ref('');
+const loading = ref(false);
+const error = ref(null);
+const newCategoryName = ref('');
+const editCategoryId = ref(null);
+const editCategoryName = ref('');
 
 const fetchCategories = async () => {
+    loading.value = true;
+    error.value = null;
     try {
-        const res = await api.get('/categories', {
+        const res = await axios.get('http://127.0.0.1:8000/api/categories', {
             headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
         });
         categories.value = res.data;
-    } catch (e) { console.error('Kategoriler yüklenemedi', e); }
+    } catch (e) {
+        error.value = "Kategoriler yüklenemedi.";
+    } finally {
+        loading.value = false;
+    }
 };
 
-const addCategory = async () => {
-    if (!newCategory.value.trim()) return alert('Kategori adı boş olamaz');
+const createCategory = async () => {
+    if (!newCategoryName.value) return;
     try {
-        const res = await api.post('/categories', { name: newCategory.value }, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
-        });
-        categories.value.push(res.data);
-        newCategory.value = '';
-    } catch (e) { console.error(e); alert('Kategori eklenemedi'); }
+        await axios.post('http://127.0.0.1:8000/api/categories',
+            { name: newCategoryName.value },
+            { headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` } }
+        );
+        newCategoryName.value = '';
+        fetchCategories();
+    } catch (e) {
+        alert("Kategori eklenemedi.");
+    }
 };
 
-const updateCategory = async (cat) => {
+const startEdit = (category) => {
+    editCategoryId.value = category.id;
+    editCategoryName.value = category.name;
+};
+
+const updateCategory = async () => {
+    if (!editCategoryName.value || !editCategoryId.value) return;
     try {
-        await api.put(`/categories/${cat.id}`, { name: cat.name }, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
-        });
-        alert('Kategori güncellendi');
-    } catch (e) { console.error(e); alert('Kategori güncellenemedi'); }
+        await axios.put(`http://127.0.0.1:8000/api/categories/${editCategoryId.value}`,
+            { name: editCategoryName.value },
+            { headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` } }
+        );
+        editCategoryId.value = null;
+        editCategoryName.value = '';
+        fetchCategories();
+    } catch (e) {
+        alert("Kategori güncellenemedi.");
+    }
 };
 
 const deleteCategory = async (id) => {
-    if (!confirm('Silmek istediğinize emin misiniz?')) return;
+    if (!confirm("Bu kategoriyi silmek istediğinize emin misiniz?")) return;
     try {
-        await api.delete(`/categories/${id}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
+        await axios.delete(`http://127.0.0.1:8000/api/categories/${id}`, {
+            headers: {Authorization: `Bearer ${localStorage.getItem('api_token')}`}
         });
-        categories.value = categories.value.filter(c => c.id !== id);
-    } catch (e) { console.error(e); alert('Kategori silinemedi'); }
+        fetchCategories();
+    } catch (e) {
+        alert("Kategori silinemedi.");
+    }
 };
 
 onMounted(fetchCategories);
 </script>
+
+<template>
+    <div class="p-6">
+        <h1 class="text-2xl font-bold mb-4">Kategori Yönetimi</h1>
+
+        <div v-if="loading">Yükleniyor...</div>
+        <div v-if="error" class="text-red-600">{{ error }}</div>
+
+        <!-- Yeni Kategori -->
+        <div class="mb-4 flex gap-2">
+            <input v-model="newCategoryName" type="text" placeholder="Yeni kategori adı" class="border p-2 rounded">
+            <button @click="createCategory" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Ekle
+            </button>
+        </div>
+
+        <!-- Kategori Listesi -->
+        <table class="min-w-full border border-gray-200">
+            <thead>
+            <tr class="bg-gray-100">
+                <th class="p-2 border">ID</th>
+                <th class="p-2 border">Kategori Adı</th>
+                <th class="p-2 border">İşlemler</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="category in categories" :key="category.id">
+                <td class="p-2 border">{{ category.id }}</td>
+                <td class="p-2 border">
+                    <span v-if="editCategoryId !== category.id">{{ category.name }}</span>
+                    <input v-else v-model="editCategoryName" class="border p-1 rounded w-full">
+                </td>
+                <td class="p-2 border flex gap-2">
+                    <button v-if="editCategoryId !== category.id" @click="startEdit(category)"
+                            class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">Düzenle
+                    </button>
+                    <button v-else @click="updateCategory"
+                            class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Kaydet
+                    </button>
+                    <button @click="deleteCategory(category.id)"
+                            class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Sil
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</template>

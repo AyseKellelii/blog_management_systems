@@ -25,6 +25,8 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
+    protected $dates = ['deleted_at'];
+
 
     // Kullanıcı ile ilişki
     public function user()

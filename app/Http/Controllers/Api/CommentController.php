@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Notifications\NewCommentNotification;
+
 
 class CommentController extends Controller
 {
@@ -21,26 +23,32 @@ class CommentController extends Controller
         return response()->json($comments);
     }
 
-    // Yorum oluştur
-    public function store(Request $request, Post $post)
+    // kullanıcı Yorum oluştur ve yazara bildirim gitme
+    public function store(Request $request)
     {
         $request->validate([
+            'post_id' => 'required|exists:posts,id',
             'icerik' => 'required|string',
         ]);
 
-        try {
-            $comment = new Comment();
-            $comment->post_id = $post->id;
-            $comment->user_id = $request->user()->id;
-            $comment->content = $request->icerik;
-            $comment->approved = $request->user()->role === 'admin' ? true : false;
-            $comment->save();
+        $comment = Comment::create([
+            'post_id' => $request->post_id,
+            'user_id' => $request->user()->id,
+            'content' => $request->icerik,
+            'approved' => false,
+        ]);
 
-            return response()->json($comment, 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        // Yazar
+        $post = $comment->post;
+        $author = $post->user;
+
+        if ($author && $author->id !== $request->user()->id) {
+            $author->notify(new \App\Notifications\NewCommentNotification($comment));
         }
+
+        return response()->json($comment, 201);
     }
+
     // Kullanıcının kendi yorumlarını listele
     public function myComments(Request $request)
     {
@@ -134,21 +142,81 @@ class CommentController extends Controller
 
 
     // Admin: yorum onayla
-    public function approve(Comment $comment)
+    // Admin: tüm yorumları getir
+    public function allComments()
     {
-        $this->authorize('approve', $comment);
-        $comment->approved = true;
-        $comment->save();
+        $comments = Comment::with(['user:id,first_name,last_name', 'post:id,title'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return response()->json($comment);
+        return response()->json($comments);
+    }
+    // Admin: Bekleyen yorumları listele
+    public function pendingComments()
+    {
+        $this->authorize('adminOnly', Comment::class);
+
+        $comments = Comment::with(['user:id,first_name,last_name', 'post:id,title'])
+            ->where('approved', false)
+            ->whereHas('user', function ($query) {
+                $query->where('role', '!=', 'admin'); // Admin yorumları hariç
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($comments);
     }
 
-    // Yorum sil (soft delete)
-    public function destroy(Comment $comment)
+// Admin: Yorumu onayla
+    // Admin: Yorumu onayla
+    public function approve($id)
     {
-        $this->authorize('delete', $comment);
+        try {
+            $comment = Comment::findOrFail($id);
+            $comment->approved = true; // ✅ doğru sütun
+            $comment->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Yorum başarıyla onaylandı',
+                'comment' => $comment,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+// Admin: Yorumu soft delete ile sil
+    public function adminDelete(Comment $comment)
+    {
+        $this->authorize('adminOnly', Comment::class);
+
         $comment->delete();
-
-        return response()->json(['message' => 'Yorum silindi.']);
+        return response()->json(['message' => 'Yorum silindi']);
     }
+
+    // Author'ın yazılarına gelen yorumlar
+    public function authorComments(Request $request)
+    {
+        $comments = Comment::with([
+            'post:id,title',
+            'post.categories:id,name', // kategorileri de getir
+            'user:id,first_name,last_name'
+        ])
+            ->whereHas('post', function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($comment) {
+                $comment->is_approved = (bool) $comment->approved;
+                return $comment;
+            });
+
+        return response()->json($comments);
+    }
+
 }
