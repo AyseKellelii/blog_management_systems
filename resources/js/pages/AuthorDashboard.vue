@@ -126,12 +126,17 @@ const openEditPost = (post) => {
 const togglePublish = async (post) => {
     try {
         const res = await api.patch(`/posts/${post.id}/toggle-status`, null, {
-            headers: {Authorization: `Bearer ${localStorage.getItem('api_token')}`}
+            headers: { Authorization: `Bearer ${localStorage.getItem('api_token')}` }
         });
-        Object.assign(post, res.data);
-    } catch {}
-};
 
+        // Post objesini güncelle
+        Object.assign(post, res.data);
+
+    } catch (e) {
+        console.error('Yayın durumu değiştirilemedi: ', e);
+        alert('Yayın durumu değiştirilemedi.');
+    }
+};
 const softDelete = async (post) => {
     try {
         await api.delete(`/posts/${post.id}`, {

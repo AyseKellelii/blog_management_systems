@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AuthController;
@@ -24,9 +25,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Post CRUD
     Route::get('/author/posts', [PostController::class, 'authorPosts']);
-    Route::apiResource('/posts', PostController::class );
+    Route::apiResource('/posts', PostController::class)->except(['show']);
     Route::put('/posts/{post}', [PostController::class, 'update']);
-    Route::patch('/posts/{post}/status', [PostController::class, 'toggleStatus']);
+    Route::patch('/posts/{post}/toggle-status', [PostController::class, 'toggleStatus']);
     Route::delete('/posts/{post}', [PostController::class, 'destroy']);
 
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/posts/published', [PostController::class, 'publishedPosts']); //yayınlanmış yazılar
+        Route::get('/posts/{post}', [CommentController::class, 'singlePostWithComments']);
+        Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
+        Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
+        Route::patch('/comments/{comment}/approve', [CommentController::class, 'approve']);
+        Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+
+        Route::get('/my-comments', [CommentController::class, 'myComments']);
+        Route::put('/comments/{comment}', [CommentController::class, 'update']);
+        Route::delete('/comments/{comment}/delete-own', [CommentController::class, 'deleteOwn']);
+    });
 });

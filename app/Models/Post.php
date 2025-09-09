@@ -25,10 +25,16 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
-    // Kategorilerle ilişki (many-to-many)
-    public function categories()
+
+    // Kullanıcı ile ilişki
+    public function user()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsTo(User::class);
+    }
+
+    // Kategorilerle ilişki (many-to-many)
+    public function categories() {
+        return $this->belongsToMany(Category::class, 'category_post', 'post_id', 'category_id');
     }
 
     // Cover image için full URL üret
@@ -38,10 +44,11 @@ class Post extends Model
             ? asset('storage/' . $this->cover_image)
             : null;
     }
-
-    // Kullanıcı ile ilişki
-    public function user()
+    public function comments()
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Comment::class);
     }
+
+
+
 }

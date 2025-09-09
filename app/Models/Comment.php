@@ -42,6 +42,15 @@ class Comment extends Model
     {
         return $this->belongsTo(Post::class);
     }
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 
     /**
      * Helper fonksiyonlar

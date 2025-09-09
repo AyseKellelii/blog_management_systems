@@ -8,20 +8,19 @@ import Dashboard from '../pages/Dashboard.vue';
 import AdminDashboard from '../pages/AdminDashboard.vue';
 import AuthorDashboard from '../pages/AuthorDashboard.vue';
 import CategoryManagement from '../pages/CategoryManagement.vue';
+import CommentCreate from '../pages/CommentCreate.vue';
+import MyComments from "@/pages/MyComments.vue";
 
 const routes = [
     { path: '/', redirect: '/register' },
     { path: '/register', name: 'register', component: Register },
     { path: '/login', name: 'login', component: Login },
-    { path: '/dashboard', name: 'dashboard', component: Dashboard, meta: { auth: true, role: 'user' } },
+    { path: '/dashboard', name: 'dashboard', component: Dashboard, meta: { auth: true } },
     { path: '/admin', name: 'admin', component: AdminDashboard, meta: { auth: true, role: 'admin' } },
     { path: '/author', name: 'author', component: AuthorDashboard, meta: { auth: true, role: 'author' } },
-    {
-        path: '/category_management',
-        name: 'category_management',
-        component: CategoryManagement,
-        meta: { auth: true, role: 'author' }
-    },
+    {path: '/category_management', name: 'category_management', component: CategoryManagement, meta: { auth: true, role: 'author' }},
+    { path: '/posts/:id/comments', name: 'comment_create', component: CommentCreate },
+    { path: '/my-comments', name: 'my_comments', component: MyComments, meta: { auth: true } },
 ];
 
 const router = createRouter({

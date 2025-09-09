@@ -27,6 +27,36 @@ class PostController extends Controller
         }
     }
 
+
+    public function publishedPosts()
+    {
+        try {
+            // Sadece 'published' statüsündeki yazılar
+            $posts = Post::with('categories') // kategorileri alıyoruz
+            ->where('status', 'published')
+                ->get()
+                ->map(function($post) {
+                    return [
+                        'id' => $post->id,
+                        'user_id' => $post->user_id,
+                        'title' => $post->title,
+                        'user_first_name' => $post->user ? $post->user->first_name : 'Bilinmiyor',
+                        'user_last_name' => $post->user ? $post->user->last_name : 'Bilinmiyor',
+                        'categories' => $post->categories->pluck('name'),
+                        'published_at' => $post->published_at,
+                        'content' => $post->content,
+                    ];
+                });
+
+            return response()->json($posts);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
     // Yeni yazı oluştur
     public function store(Request $request)
     {
