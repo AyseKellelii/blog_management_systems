@@ -54,15 +54,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/comments/{comment}', [CommentController::class, 'update']);
         Route::delete('/comments/{comment}/delete-own', [CommentController::class, 'deleteOwn']);
 
-        // Admin paneli
-        // routes/api.php
-        Route::get('/my-notifications', function (Request $request) {
-            return $request->user()->notifications()->latest()->get();
-        });
-        Route::get('/admin/posts', [PostController::class, 'adminPosts']);
+
+    });
+    Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/comments', [CommentController::class, 'allComments']);
         Route::get('/admin/comments/pending', [CommentController::class, 'pendingComments']);
         Route::put('/admin/comments/{id}/approve', [CommentController::class, 'approve']);
-        Route::delete('/admin/comments/{comment}/delete', [CommentController::class, 'adminDelete']);
+        Route::delete('/admin/comments/{id}', [CommentController::class, 'adminDelete']);
+        Route::get('/admin/posts', [PostController::class, 'adminPosts']);
     });
+
 });

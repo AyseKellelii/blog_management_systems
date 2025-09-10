@@ -152,10 +152,10 @@ class PostController extends Controller
             return response()->json(['error' => 'Yayın durumu değiştirilemedi.'], 500);
         }
     }
+    // Admin: tüm yazıları yazar bilgisi ile getir
     public function adminPosts()
     {
         try {
-            // Tüm yazılar: yazar bilgisi ile
             $posts = Post::with('user')
                 ->orderByDesc('created_at')
                 ->get()
@@ -163,8 +163,8 @@ class PostController extends Controller
                     return [
                         'id' => $post->id,
                         'title' => $post->title,
-                        'user_first_name' => $post->user ? $post->user->first_name : 'Bilinmiyor',
-                        'user_last_name' => $post->user ? $post->user->last_name : 'Bilinmiyor',
+                        'user_first_name' => $post->user?->first_name ?? 'Bilinmiyor',
+                        'user_last_name' => $post->user?->last_name ?? 'Bilinmiyor',
                         'status' => $post->status === 'published' ? 'Yayında' : 'Taslak',
                         'published_at' => $post->published_at,
                     ];

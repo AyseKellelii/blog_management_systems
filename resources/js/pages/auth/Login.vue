@@ -2,7 +2,6 @@
     <div class="min-h-screen flex items-center justify-center bg-gray-100">
         <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
             <h1 class="text-3xl font-bold text-center mb-6">Giriş Yap</h1>
-
             <Form @submit="submitForm" :validation-schema="schema" class="space-y-4">
 
                 <!-- Email veya Telefon -->
@@ -87,6 +86,7 @@ async function submitForm() {
 }
 </script>
 
-<style scoped>
-/* Opsiyonel: Hover ve focus efektlerini iyileştirmek için */
+
+<style>
+/* Opsiyonel ekstra CSS */
 </style>

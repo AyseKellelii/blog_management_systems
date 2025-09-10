@@ -24,11 +24,9 @@
                         {{ comment.post.title }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                  :class="comment.is_approved ? 'text-green-600' : 'text-red-600'"
-              >
-                {{ comment.is_approved ? 'Onaylı' : 'Beklemede' }}
-              </span>
+  <span :class="comment.approved ? 'text-green-600' : 'text-red-600'">
+    {{ comment.approved ? 'Onaylı' : 'Beklemede' }}
+  </span>
                     </td>
                 </tr>
                 <tr v-if="comments.length === 0">

@@ -92,12 +92,24 @@ const schema = yup.object({
 
 async function submitForm(values) {
     try {
-        await axios.post('http://127.0.0.1:8000/api/register', values);
+        const response = await axios.post('http://127.0.0.1:8000/api/register', values);
 
-        alert('Kayıt başarılı! Lütfen giriş yapın.');
-        router.push('/login');
+        // Response kontrolü
+        if (response.status === 200 || response.status === 201) {
+            alert('Kayıt başarılı! Lütfen giriş yapın.');
+            router.push('/login');  // login sayfasına yönlendir
+        } else {
+            alert('Kayıt sırasında bir sorun oluştu.');
+            console.error(response.data);
+        }
     } catch (e) {
-        alert('Kayıt başarısız!');
+        // 422 validasyon hatalarını kullanıcıya göster
+        if (e.response?.status === 422) {
+            const errors = e.response.data.errors;
+            alert(Object.values(errors).flat().join('\n'));
+        } else {
+            alert('Kayıt başarısız! Lütfen tekrar deneyin.');
+        }
         console.error(e.response?.data || e);
     }
 }

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Notification extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * Mass assignable fields
@@ -26,6 +28,14 @@ class Notification extends Model
         'data' => 'array',  // JSON veri array olarak kullanılabilir
         'read' => 'boolean',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnlyDirty()      // Sadece değişen alanları loglar
+            ->logFillable()       // Fillable alanları logla
+            ->useLogName('notification');
+    }
 
     /**
      * Relationships

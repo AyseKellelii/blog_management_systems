@@ -43,17 +43,43 @@ class CommentController extends Controller
         $author = $post->user;
 
         if ($author && $author->id !== $request->user()->id) {
-            $author->notify(new \App\Notifications\NewCommentNotification($comment));
+            $author->notify(new NewCommentNotification($comment));
         }
 
         return response()->json($comment, 201);
     }
 
-    // Kullanıcının kendi yorumlarını listele
-    public function myComments(Request $request)
+    // Kullanıcının kendi yorumları
+    public function myComments()
     {
-        $comments = Comment::with(['post:id,title', 'user:id,first_name,last_name'])
-            ->where('user_id', $request->user()->id)
+        $user = auth()->user();
+
+        $comments = Comment::with('post')
+            ->withTrashed() // silinmiş yorumlar dahil
+            ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($comment) {
+                return [
+                    'id' => $comment->id,
+                    'content' => $comment->content,
+                    'approved' => $comment->approved,
+                    'post_title' => $comment->post?->title ?? 'Bilinmiyor',
+                    'created_at' => $comment->created_at,
+                ];
+            });
+
+        return response()->json($comments);
+    }
+    public function authorComments(Request $request)
+    {
+        $user = $request->user();
+
+        // Yazarın yazılarına gelen yorumları al
+        $comments = Comment::with(['user', 'post'])
+            ->whereHas('post', function($query) use ($user) {
+                $query->where('user_id', $user->id); // sadece kendi yazıları
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -141,25 +167,38 @@ class CommentController extends Controller
 
 
 
-    // Admin: yorum onayla
     // Admin: tüm yorumları getir
     public function allComments()
     {
-        $comments = Comment::with(['user:id,first_name,last_name', 'post:id,title'])
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Yetkisiz'], 403);
+        }
+
+        $comments = Comment::with(['user:id,first_name,last_name,role', 'post:id,title'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($comment) {
+                // Admin yorumları direkt onaylı
+                if (($comment->user->role ?? null) === 'admin') {
+                    $comment->approved = true;
+                }
+                return $comment;
+            });
 
         return response()->json($comments);
     }
-    // Admin: Bekleyen yorumları listele
+
+// Admin: Bekleyen yorumları listele
     public function pendingComments()
     {
-        $this->authorize('adminOnly', Comment::class);
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Yetkisiz'], 403);
+        }
 
         $comments = Comment::with(['user:id,first_name,last_name', 'post:id,title'])
             ->where('approved', false)
             ->whereHas('user', function ($query) {
-                $query->where('role', '!=', 'admin'); // Admin yorumları hariç
+                $query->whereIn('role', ['user', 'author']);
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -168,55 +207,32 @@ class CommentController extends Controller
     }
 
 // Admin: Yorumu onayla
-    // Admin: Yorumu onayla
     public function approve($id)
     {
-        try {
-            $comment = Comment::findOrFail($id);
-            $comment->approved = true; // ✅ doğru sütun
-            $comment->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Yorum başarıyla onaylandı',
-                'comment' => $comment,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Yetkisiz'], 403);
         }
+
+        $comment = Comment::findOrFail($id);
+        $comment->approved = true;
+        $comment->save();
+
+        return response()->json([
+            'success' => true,
+            'comment' => $comment
+        ]);
     }
 
-// Admin: Yorumu soft delete ile sil
-    public function adminDelete(Comment $comment)
+// Admin: Yorumu sil
+    public function adminDelete($id)
     {
-        $this->authorize('adminOnly', Comment::class);
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Yetkisiz'], 403);
+        }
 
+        $comment = Comment::withTrashed()->findOrFail($id);
         $comment->delete();
+
         return response()->json(['message' => 'Yorum silindi']);
     }
-
-    // Author'ın yazılarına gelen yorumlar
-    public function authorComments(Request $request)
-    {
-        $comments = Comment::with([
-            'post:id,title',
-            'post.categories:id,name', // kategorileri de getir
-            'user:id,first_name,last_name'
-        ])
-            ->whereHas('post', function ($q) use ($request) {
-                $q->where('user_id', $request->user()->id);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($comment) {
-                $comment->is_approved = (bool) $comment->approved;
-                return $comment;
-            });
-
-        return response()->json($comments);
-    }
-
 }

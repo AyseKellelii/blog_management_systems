@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Post extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'user_id',
@@ -27,6 +29,13 @@ class Post extends Model
 
     protected $dates = ['deleted_at'];
 
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnlyDirty()      // Sadece değişen alanları loglar
+            ->logFillable()       // Fillable alanları logla
+            ->useLogName('post');
+    }
 
     // Kullanıcı ile ilişki
     public function user()
