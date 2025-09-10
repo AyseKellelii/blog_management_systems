@@ -2,30 +2,79 @@
 
 Bu dökümantasyon, Laravel 12 ile geliştirdiğim Blog Yönetim Sistemi projesini adım adım çalıştırmak için hazırlanmıştır.
 
-1-) İlk olarak laravel projelerimde Laravel 10 kullandığım için sürümüm 8.1.25' ti
-Laravel 12 yi kullanabilmek için sürümü 8.2 yaptım.
+1. Gereksinimler
 
-2-)C dizinim çok dolu olduğu yani bellek yetersizliğinden dolayı D dizinide projemin adı olacak olan 
-"blog_management_system" diye bir dosya oluşturdum.
+PHP >= 8.2
+Composer
+Node.js & NPM
+MySQL / MariaDB
+Postman (API testleri için)
 
-3-)Komut istemcisini açıp oluşturduğum dosya yoluna giderek "composer create-project laravel/laravel . "12.*" 
-" komutunu çalıştırarak projemi yaratmış oldum.
+2. Kurulum Adımları
 
-4-)Oluşturmuş olduğum projenin doğru çalışıp çalışmadığını kontrol etmek için kullandığım IDE(phpstorm) den 
-php artisan serve komutunu çalıştırdım ve terminal çıktısı olarak IDE de hala 8.1.25 sürümü görünüyordu 
-sürüm hatası verdi biraz araştırdım. IDE de ayarlar>PHP yi seçip CLI Interpreter kısmına 8.2 sürümünü ekleyerek
-aktifleştirdim ve projemi tekrardan çalıştırdığımda projem hatasız bir şekilde çalıştı.
+PHP sürümümü kontrol ettim ve Laravel 12 için PHP 8.2’ye yükselttim.
+Dizinimde C sürücüsü dolu olduğu için D sürücüsünde blog_management_system adında bir klasör oluşturdum.
+Komut istemcisini açıp bu dizine giderek Laravel projesini oluşturdum:
+composer create-project laravel/laravel . "12.*" 
+Bu komutla laravel projem oluşturulmuş oldu.Daha sonra
+PhpStorm’dan php artisan serve komutunu çalıştırdım. Başlangıçta PHP sürümü 8.1.25 olduğu için hata verdi.
+PhpStorm ayarlarından CLI Interpreter olarak PHP 8.2’yi ekleyip aktifleştirdim ve tekrar çalıştırdım. Proje hatasız açıldı.
 
-5-)Daha sonra veritabanı ile proje bağlantısı yapmak için XAMPP i açtığımda XAMPP sürümümde 8.1 
-olduğundan apache kısmı çalışmadı. XAMPP i silerek 8.2 versiyonunu yÜkledim ve kurulumu yaptım.
+3. Node.js ve NPM Kurulumu
 
-6-)XAMPP imi sorunsuz bir şekilde çalıştırıp "blog_management_system" adında bir veritabanı oluşturdum.
-Daha sonra projemdeki .env dosyasına gelip mysql veritabanı bağlantılarımı yaptım.
+Node.js resmi web sitesinden Node.js 20.x LTS sürümünü indirdim ve yükledim.
+Terminalden versiyonları kontrol ettim:
 
-7-)php artisan migrate komutunu çalıştırarak veritabanıma tablolarımı migrate ettim. 
+node -v
+npm -v
 
-8-)Terminalde composer update ve npm run build komutlarını çalıştırarak gerekli bağımlılıkları yükledim.
+Proje bağımlılıklarını yükledim:
 
-9-)Son olarak terminalde php artsan serve komutunu çalıştırarak projemi başlattım ve eksiksiz bir şekilde projem
-kodlanmaya hazır hale gelerek ayağa kalktı:)
+npm install
+npm run build
+
+4. Veritabanı ve .env Ayarları
+
+XAMPP’im 8.1v olduğu için laravel 12 yi desteklemiyordu ve kaldırıp PHP 8.2 sürümünü yükledim.
+Veritabanımı hem mysql hem de datagrip ide' si üzerinden yönettim.
+blog_management_system adında bir veritabanı oluşturdum.
+.env dosyasını düzenledim:
+
+APP_NAME=BlogManagementSystem
+APP_ENV=local
+APP_KEY=base64:...
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=blog_management_system
+DB_USERNAME=root
+DB_PASSWORD=
+SANCTUM_STATEFUL_DOMAINS=127.0.0.1:8000
+
+5. Tabloları migrate ettim:
+php artisan migrate
+
+6. Projeyi Çalıştırma:
+   
+Terminalden proje dizinine giderek:
+php artisan serve
+komutunu çalıştırdım. Böylece proje eksiksiz çalışır hâle geldi.
+
+7. Postman Kullanımı
+   
+Postman’i açtım ve BlogManagementSystem API collection’ını içe aktardım.
+API endpointlerini test ettim.
+Authorization kısmında Bearer Token kullanarak korunan endpointleri test ettim.
+BlogManagementSystem/postman/BlogManagementSystem API.postman_collection.json yolunda bulunan dosyamı projeye entegre ettim
+
+8. Ek Notlar
+
+Projede Laravel Sanctum kullanarak API authentication sağlanmıştır.
+Spatie MediaLibrary dosya yükleme işlemleri için entegre edilmiştir.
+Spatie ActivityLog ile model değişiklikleri loglanmaktadır.
+Frontend tarafı Vue 3 Composition API ve Tailwind CSS ile geliştirilmiştir.
+Git versiyon kontrolü kullanılmıştır ve Postman collection projeye eklenmiştir.
 
